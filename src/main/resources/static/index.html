@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Expedia Package Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+        h2 { color: #333; }
+        form { margin-bottom: 20px; }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+        }
+        .card img {
+            width: 150px;
+            border-radius: 8px;
+        }
+        .card-content {
+            flex: 1;
+        }
+        .card-content h3 {
+            margin: 0;
+        }
+        .price { color: green; font-weight: bold; }
+        .savings { color: #d9534f; }
+        .rating { color: goldenrod; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+<h2>Search Package Offers</h2>
+<form id="searchForm">
+    <label>Origin City: <input type="text" id="origin" required></label>
+    <label>Destination City: <input type="text" id="destination" required></label>
+    <button type="submit">Search</button>
+</form>
+
+<div id="results"></div>
+
+<script>
+    document.getElementById("searchForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const origin = document.getElementById("origin").value;
+        const destination = document.getElementById("destination").value;
+        fetch(`/searchPackages?origin=${origin}&destination=${destination}`)
+            .then(res => res.json())
+            .then(data => {
+                const offers = data.offers?.Package || [];
+                const resultDiv = document.getElementById("results");
+                resultDiv.innerHTML = '';
+
+                if (offers.length === 0) {
+                    resultDiv.innerHTML = "<p>No package offers found for the selected route.</p>";
+                } else {
+                    offers.forEach(offer => {
+                        const hotel = offer.hotelInfo;
+                        const flight = offer.flightInfo;
+                        const pricing = offer.packagePricingInfo;
+
+                        const card = document.createElement("div");
+                        card.className = "card";
+
+                        card.innerHTML = `
+                                <img src="${hotel.hotelImageUrl}" alt="Hotel Image">
+                                <div class="card-content">
+                                    <h3>${hotel.hotelName}</h3>
+                                    <p class="rating">Hotel Rating: ${hotel.hotelStarRating} stars — ${hotel.formattedHotelGuestReviewRating}/5 (${hotel.formattedHotelReviewTotal} reviews)</p>
+                                    <p>Flight Carrier: ${flight.flightDealCarrierName} (${flight.tripType})</p>
+                                    <p class="price">Price: ${pricing.formattedPerPassengerPackagePrice} per person</p>
+                                    <p class="price">Total: ${pricing.formattedTotalPriceValue}</p>
+                                    <p class="savings">You save $${pricing.perPsgrSavings.toFixed(2)}</p>
+                                </div>
+                            `;
+                        resultDiv.appendChild(card);
+                    });
+                }
+            })
+            .catch(err => {
+                document.getElementById("results").innerHTML = "<p style='color:red;'>Error fetching data. Please try again.</p>";
+                console.error(err);
+            });
+    });
+</script>
+</body>
+</html>
